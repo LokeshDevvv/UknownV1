@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Cyberpunk Design System */
+
+@layer base {
+  :root {
+    /* Base colors */
+    --background: 0 0% 3%;
+    --foreground: 0 0% 98%;
+    
+    /* UI colors */
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 3%;
+    
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 64.9%;
+    
+    --accent: 0 0% 8%;
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 8%;
+    --input: 0 0% 8%;
+    --ring: 0 0% 83.9%;
+
+    /* Accent colors */
+    --cyber-blue: 217 91% 60%;
+    --cyber-green: 142 76% 36%;
+    --cyber-red: 0 84% 60%;
+    --cyber-purple: 270 76% 53%;
+    --cyber-yellow: 45 93% 47%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 10 10 15;
+    --sidebar-foreground: 200 100% 95%;
+    --sidebar-primary: 195 100% 50%;
+    --sidebar-primary-foreground: 10 10 15;
+    --sidebar-accent: 20 20 25;
+    --sidebar-accent-foreground: 200 100% 95%;
+    --sidebar-border: 30 30 35;
+    --sidebar-ring: 195 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Rajdhani', sans-serif;
+    background: linear-gradient(135deg, 
+      rgb(10, 10, 15) 0%, 
+      rgb(15, 15, 25) 25%, 
+      rgb(8, 8, 20) 50%, 
+      rgb(12, 12, 18) 100%
+    );
+    min-height: 100vh;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  .font-cyber {
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  .font-display {
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.02em;
+  }
+}
+
+@layer utilities {
+  /* Cyberpunk Effects */
+  .cyber-glow {
+    @apply shadow-[0_0_20px_rgba(59,130,246,0.3)];
+  }
+
+  .cyber-glow-green {
+    box-shadow: 0 0 20px hsl(var(--cyber-green) / 0.3),
+                0 0 40px hsl(var(--cyber-green) / 0.1);
+  }
+
+  .cyber-glow-red {
+    box-shadow: 0 0 20px hsl(var(--cyber-red) / 0.3),
+                0 0 40px hsl(var(--cyber-red) / 0.1);
+  }
+
+  .glassmorphism {
+    @apply bg-background/95 backdrop-blur-md border border-white/5;
+  }
+
+  .cyber-border {
+    @apply border border-white/10;
+  }
+
+  .cyber-border::before {
+    content: '';
+    @apply absolute inset-0 border border-white/5 rounded-inherit;
+    pointer-events: none;
+  }
+
+  .holographic {
+    @apply relative overflow-hidden;
+  }
+
+  .holographic::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent;
+    animation: holographic-shine 3s infinite;
+  }
+
+  .scan-lines {
+    @apply relative overflow-hidden;
+  }
+
+  .scan-lines::after {
+    content: '';
+    @apply absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_4px];
+    animation: scan 8s linear infinite;
+  }
+}
+
+@keyframes holographic-shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.animate-pulse-cyber {
+  animation: pulse-cyber 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-white/20;
+}
