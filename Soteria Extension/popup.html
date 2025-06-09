@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 400px;
+      padding: 20px;
+      font-family: 'Courier New', monospace;
+      background: #0a0a0f;
+      color: white;
+      margin: 0;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 24px;
+      height: 24px;
+      background: #00ffff;
+      border-radius: 50%;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #00ffff;
+    }
+
+    .api-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .api-status .indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff0055;
+    }
+
+    .api-status .indicator.connected {
+      background: #00ff66;
+    }
+
+    .url-section {
+      margin-bottom: 20px;
+    }
+
+    .url {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      word-break: break-all;
+      margin-bottom: 8px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .url-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .url-detail-item {
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+
+    .url-detail-item .label {
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 4px;
+    }
+
+    .url-detail-item .value {
+      color: #00ffff;
+      font-family: monospace;
+    }
+
+    .status {
+      font-size: 16px;
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status.safe {
+      background: rgba(0, 255, 102, 0.1);
+      color: #00ff66;
+    }
+
+    .status.moderate {
+      background: rgba(255, 204, 0, 0.1);
+      color: #ffcc00;
+    }
+
+    .status.high {
+      background: rgba(255, 0, 85, 0.1);
+      color: #ff0055;
+    }
+
+    .score-section {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .score {
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .score.safe { color: #00ff66; }
+    .score.moderate { color: #ffcc00; }
+    .score.high { color: #ff0055; }
+
+    .score-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .threat-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .metric-item {
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .section-title {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reasons {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .reasons li {
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.8);
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reasons li::before {
+      content: "⚠️";
+    }
+
+    .loading {
+      text-align: center;
+      color: #00ffff;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .loading-spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(0, 255, 255, 0.1);
+      border-top: 3px solid #00ffff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: rgba(255, 0, 85, 0.1);
+      color: #ff0055;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+
+    button {
+      background: #00ffff;
+      color: #0a0a0f;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #00cccc;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"></div>
+    <div class="title">SOTERIA</div>
+  </div>
+  
+  <div class="api-status">
+    <div id="apiStatus" class="indicator"></div>
+    <span id="apiStatusText">Checking API...</span>
+  </div>
+
+  <div id="loading" class="loading">
+    <div class="loading-spinner"></div>
+    <div>Analyzing URL...</div>
+  </div>
+
+  <div id="content">
+    <div id="result" style="display: none;">
+      <div class="url-section">
+        <div id="urlDisplay" class="url"></div>
+        <div id="urlDetails" class="url-details"></div>
+      </div>
+
+      <div class="score-section">
+        <div id="score" class="score">0/100</div>
+        <div class="score-label">Threat Score</div>
+      </div>
+
+      <div class="threat-metrics">
+        <div class="metric-item">
+          <div id="securityScore" class="metric-value">0%</div>
+          <div class="metric-label">Security Score</div>
+        </div>
+        <div class="metric-item">
+          <div id="riskLevel" class="metric-value">Low</div>
+          <div class="metric-label">Risk Level</div>
+        </div>
+      </div>
+
+      <div class="section-title">🔍 Analysis Results</div>
+      <div id="threats" class="reasons"></div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html> 
