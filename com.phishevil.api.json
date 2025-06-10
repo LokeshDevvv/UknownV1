@@ -1,9 +1,0 @@
-{
-  "name": "com.phishevil.api",
-  "description": "PhishEvil API Native Messaging Host",
-  "path": "/home/k3n4x/Documents/PhishEvilV2/native_host.py",
-  "type": "stdio",
-  "allowed_origins": [
-    "chrome-extension://*"
-  ]
-} 

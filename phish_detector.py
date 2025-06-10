@@ -14,13 +14,33 @@ import os
 import vt
 from collections import Counter
 import backoff
+import json
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 class PhishingDetector:
     def __init__(self):
         self.vt_api_key = os.getenv('VIRUSTOTAL_API_KEY')
+        # Clean and validate Google Safe Browsing API key
+        raw_key = os.getenv('GOOGLE_SAFE_BROWSING_API_KEY', '').strip()
+        self.google_sb_api_key = raw_key.rstrip('~') if raw_key else None
+        if self.google_sb_api_key:
+            logger.info("Google Safe Browsing API key loaded successfully")
+        else:
+            logger.warning("Google Safe Browsing API key not found in environment variables")
         self._vt_client = None
+        
+        # Add browser-specific URLs that are always safe
+        self.safe_browser_urls = {
+            'chrome://', 'about:', 'file://', 'view-source:', 'data:', 'blob:',
+            'edge://', 'brave://', 'opera://', 'vivaldi://', 'moz-extension://',
+            'chrome-extension://', 'edge-extension://'
+        }
         
         # Critical security vendors (highest reputation)
         self.critical_vendors = {
@@ -257,82 +277,129 @@ class PhishingDetector:
 
         return {"score": score, "reasons": reasons, "vendor_results": vendor_results}
 
+    async def check_google_safe_browsing(self, url: str) -> bool:
+        """Returns True if the URL is flagged as unsafe by Google Safe Browsing."""
+        if not self.google_sb_api_key:
+            logger.warning("Google Safe Browsing API key not configured")
+            return False
+            
+        api_url = f'https://safebrowsing.googleapis.com/v4/threatMatches:find?key={self.google_sb_api_key}'
+        payload = {
+            "client": {
+                "clientId": "phish-evil-app",
+                "clientVersion": "1.0"
+            },
+            "threatInfo": {
+                "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
+                "platformTypes": ["ANY_PLATFORM"],
+                "threatEntryTypes": ["URL"],
+                "threatEntries": [
+                    {"url": url}
+                ]
+            }
+        }
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(api_url, json=payload, timeout=5) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        return bool(data.get("matches"))
+                    elif resp.status == 400:
+                        error_data = await resp.json()
+                        if "error" in error_data and error_data["error"].get("status") == "INVALID_ARGUMENT":
+                            logger.error(f"Invalid Google Safe Browsing API key: {error_data['error'].get('message')}")
+                        else:
+                            logger.error(f"Google Safe Browsing API error: {error_data}")
+                    else:
+                        logger.error(f"Google Safe Browsing API returned status code: {resp.status}")
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            logger.error(f"Google Safe Browsing check network/timeout error: {str(e)}")
+        except Exception as e:
+            logger.error(f"Google Safe Browsing check failed: {str(e)}")
+        return False
+
     async def analyze_url(self, url: str) -> Dict:
         try:
+            # Quick check for browser-specific URLs
+            if any(url.startswith(prefix) for prefix in self.safe_browser_urls):
+                return {
+                    'url': url,
+                    'safety_status': 'SAFE',
+                    'main_message': '✅ This is a legitimate browser URL',
+                    'details': ['✅ Browser-specific URL (chrome://, about:, etc.)'],
+                    'vendor_alerts': [],
+                    'gsb_checked': False,
+                    'virustotal_checked': False
+                }
+
+            # Always check Google Safe Browsing
+            gsb_flagged = await self.check_google_safe_browsing(url)
+            gsb_details = []
+            if gsb_flagged:
+                gsb_details.append('🚨 Flagged by Google Safe Browsing')
+
+            # Always check VirusTotal, but with a timeout
+            vt_result = None
+            vt_flagged = False
+            vt_details = []
+            vt_vendor_alerts = []
+            vt_timeout = False
+            try:
+                vt_result = await asyncio.wait_for(self.check_security_vendors(url), timeout=3)
+                vt_flagged = vt_result['score'] > 0
+                vt_details = vt_result['reasons']
+                vt_vendor_alerts = vt_result.get('vendor_results', [])
+            except asyncio.TimeoutError:
+                vt_timeout = True
+                vt_details.append('⚠️ VirusTotal check timed out')
+
+            # Aggregate results
+            is_dangerous = gsb_flagged or vt_flagged
+            reasons = []
+            vendor_alerts = []
+            if gsb_details:
+                reasons.extend(gsb_details)
+            if vt_details:
+                reasons.extend(vt_details)
+            if vt_vendor_alerts:
+                vendor_alerts.extend(vt_vendor_alerts)
+
+            # Parse URL for details
             parsed_url = urlparse(url)
             domain = parsed_url.netloc
+            protocol = parsed_url.scheme
             path = parsed_url.path
-            
-            # Initialize features dictionary
-            features = {
-                'is_safe': True,
-                'warnings': [],
-                'vendor_alerts': []
-            }
-            
-            # Check if it's a trusted educational domain
-            is_edu_domain = any(edu_domain in domain for edu_domain in self.trusted_edu_domains)
-            domain_tld = domain.split('.')[-2:] if len(domain.split('.')) > 1 else []
-            is_edu_tld = '.'.join(domain_tld) in self.trusted_tlds
-            
-            # Check if it's a known trusted domain
-            is_trusted_domain = domain in self.trusted_domains or any(domain.endswith('.' + td) for td in self.trusted_domains)
-            
-            if is_edu_domain or is_edu_tld:
-                features['warnings'].append('✅ This is a verified educational website')
-            elif is_trusted_domain:
-                features['warnings'].append('✅ This is a verified trusted website')
-            
-            # Check SSL certificate
-            if parsed_url.scheme == 'https':
-                features['warnings'].append('✅ Connection is secure (HTTPS)')
-            else:
-                features['warnings'].append('⚠️ Connection is not secure (No HTTPS)')
-                features['is_safe'] = False
-            
-            # Get URL structure analysis
-            url_structure = self.check_url_structure(url)
-            if url_structure['score'] > 0:
-                features['is_safe'] = False
-                features['warnings'].extend(url_structure['reasons'])
-            
-            # Get security vendor analysis
-            vendor_analysis = await self.check_security_vendors(url)
-            if vendor_analysis['score'] > 0:
-                features['is_safe'] = False
-                features['warnings'].extend(vendor_analysis['reasons'])
-                features['vendor_alerts'] = vendor_analysis.get('vendor_results', [])
-            
-            # Additional checks for high-risk combinations
-            if not parsed_url.scheme == 'https' and not (is_edu_domain or is_edu_tld or is_trusted_domain):
-                features['warnings'].append('⚠️ CRITICAL: Untrusted website without secure connection')
-                features['is_safe'] = False
-            
-            # Prepare user-friendly response
-            safety_status = "SAFE" if features['is_safe'] else "DANGEROUS"
-            main_message = ""
-            
-            if features['is_safe']:
-                if is_edu_domain or is_edu_tld:
-                    main_message = "✅ This is a legitimate educational website"
-                elif is_trusted_domain:
-                    main_message = "✅ This is a legitimate trusted website"
+            port = parsed_url.port if parsed_url.port else (443 if protocol == 'https' else 80)
+
+            # Main message
+            if is_dangerous:
+                if gsb_flagged and vt_flagged:
+                    main_message = '🚨 This link is flagged as dangerous by both Google Safe Browsing and VirusTotal!'
+                elif gsb_flagged:
+                    main_message = '🚨 This link is flagged as dangerous by Google Safe Browsing!'
+                elif vt_flagged:
+                    main_message = '🚨 This link is flagged as dangerous by VirusTotal!'
                 else:
-                    main_message = "✅ This website appears to be safe"
+                    main_message = '⚠️ This website shows suspicious characteristics.'
             else:
-                if len(features['vendor_alerts']) > 0:
-                    main_message = "🚨 WARNING: Multiple security services have flagged this website as dangerous"
-                else:
-                    main_message = "⚠️ WARNING: This website shows suspicious characteristics"
+                main_message = '✅ This website appears to be safe'
             
             return {
                 'url': url,
-                'safety_status': safety_status,
-                'main_message': main_message,
-                'details': features['warnings'],
-                'vendor_alerts': features['vendor_alerts'] if not features['is_safe'] else []
+                'domain': domain,
+                'protocol': protocol,
+                'path': path,
+                'port': port,
+                'risk_level': 'High Risk' if is_dangerous else 'Low Risk',
+                'total_score': 100 if is_dangerous else 0,
+                'features': {
+                    'reasons': reasons,
+                    'vendor_alerts': vendor_alerts,
+                    'main_message': main_message
+                },
+                'gsb_checked': True,
+                'virustotal_checked': not vt_timeout
             }
-            
         except Exception as e:
             logger.error(f"Error analyzing URL: {str(e)}")
             raise
@@ -463,65 +530,45 @@ class PhishingDetector:
         return {"score": score, "reasons": reasons}
 
     def check_url_structure(self, url: str) -> Dict:
+        parsed_url = urlparse(url)
+        path = parsed_url.path
         score = 0
         reasons = []
-        
-        # Check URL length
-        if len(url) > 150:
-            score += 30
-            reasons.append("⚠️ Unusually long URL")
-        elif len(url) > 100:
-            score += 20
-            reasons.append("⚠️ Long URL")
-        
-        # Check for suspicious characters with higher penalties
-        suspicious_chars = re.findall(r'[@~`!#$%^&*()+=\[\]{}|\\;"\'<>?]', url)
-        if suspicious_chars:
-            if len(suspicious_chars) > 3:
-                score += 40
-                reasons.append(f"⚠️ Contains many suspicious characters: {', '.join(set(suspicious_chars))}")
-            else:
-                score += 20
-                reasons.append(f"⚠️ Contains suspicious characters: {', '.join(set(suspicious_chars))}")
-        
-        # Higher penalty for IP addresses
-        if re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', url):
-            score += 50
-            reasons.append("⚠️ Contains IP address instead of domain name")
-        
-        # Check for excessive subdomains
-        domain = urlparse(url).netloc
-        subdomain_count = len(domain.split('.')) - 2
-        if subdomain_count > 3:
-            score += 30
-            reasons.append("⚠️ Excessive number of subdomains")
-        
-        # Check for encoded characters
-        if '%' in url:
-            encoded_chars = re.findall(r'%[0-9A-Fa-f]{2}', url)
-            if len(encoded_chars) > 3:
-                score += 40
-                reasons.append("⚠️ Contains multiple encoded characters")
-            else:
-                score += 20
-                reasons.append("⚠️ Contains encoded characters")
 
-        # Check for short URLs or tracking parameters
-        if re.search(r'/(sc|tr|em|rd|go)/[a-zA-Z0-9]{1,3}(\?|$)', url):
-            score += 40
-            reasons.append("⚠️ Suspicious URL pattern - possible redirect or tracking link")
-        
-        # Check for unusual TLDs
-        tld = domain.split('.')[-1].lower()
-        unusual_tlds = {'ws', 'tk', 'ml', 'ga', 'cf', 'gq', 'top', 'xyz', 'work', 'date', 'faith', 'review', 'stream'}
-        if tld in unusual_tlds:
-            score += 40
-            reasons.append(f"⚠️ Suspicious TLD: .{tld}")
-        
-        if score == 0:
-            reasons.append("✅ URL structure appears normal")
+        # Check for multiple subdomains (often used in phishing)
+        domain_parts = parsed_url.netloc.split('.')
+        if len(domain_parts) > 4: # e.g., sub.sub.domain.com
+            score -= 15
+            reasons.append("⚠️ URL contains excessive subdomains")
 
+        # Check for long URL length (often used to hide real domain)
+        if len(url) > 75:
+            score -= 10
+            reasons.append("⚠️ URL is unusually long")
+
+        # Check for suspicious characters in path (e.g., @, non-standard encoding)
+        suspicious_chars_regex = r"[@=?&%\']"
+        if re.search(suspicious_chars_regex, path):
+            score -= 10
+            reasons.append("⚠️ Suspicious characters in URL path")
+            
         return {"score": score, "reasons": reasons}
+
+    def is_ip_address_url(self, url: str) -> bool:
+        parsed_url = urlparse(url)
+        hostname = parsed_url.hostname
+        if hostname:
+            try:
+                socket.inet_aton(hostname)
+                return True
+            except socket.error:
+                pass
+        return False
+
+    def has_at_symbol_in_domain(self, url: str) -> bool:
+        parsed_url = urlparse(url)
+        # Check if '@' is present in the network location (hostname and port)
+        return '@' in parsed_url.netloc
 
     def check_domain_similarity(self, url: str) -> Dict:
         domain = urlparse(url).netloc.lower()

@@ -91,38 +91,24 @@ async function analyzeURL(url) {
 
 function displayResult(result, url) {
   // Display URL and its details
-  urlDisplay.textContent = url;
-  
-  const urlInfo = parseURL(url);
-  if (urlInfo) {
-    urlDetails.innerHTML = `
-      <div class="url-detail-item">
-        <div class="label">Protocol</div>
-        <div class="value">${urlInfo.protocol}</div>
-      </div>
-      <div class="url-detail-item">
-        <div class="label">Domain</div>
-        <div class="value">${urlInfo.hostname}</div>
-      </div>
-      <div class="url-detail-item">
-        <div class="label">Path</div>
-        <div class="value">${urlInfo.pathname || '/'}</div>
-      </div>
-      <div class="url-detail-item">
-        <div class="label">Port</div>
-        <div class="value">${urlInfo.port}</div>
-      </div>
-    `;
-  }
+  urlDisplay.textContent = result.url;
+
+  // Use API response fields for details
+  urlDetails.innerHTML = `
+    <div class="url-detail-item">
+      <div class="label">Domain</div>
+      <div class="value">${result.domain}</div>
+    </div>
+  `;
 
   // Clear previous results
   threatsList.innerHTML = '';
-  
+
   // Calculate threat score (0-100)
   const threatScore = Math.min(Math.round(result.total_score * 100), 100);
   let scoreClass = 'high';
   let riskText = result.risk_level || 'Unknown';
-  
+
   if (result.risk_level === 'Low Risk') {
     scoreClass = 'safe';
   } else if (result.risk_level === 'Medium Risk') {
@@ -132,7 +118,7 @@ function displayResult(result, url) {
   // Update security metrics
   scoreDiv.textContent = `${threatScore}/100`;
   scoreDiv.className = `score ${scoreClass}`;
-  
+
   // Calculate security score (inverse of threat score)
   const securityScoreValue = 100 - threatScore;
   securityScore.textContent = `${securityScoreValue}%`;
@@ -140,39 +126,34 @@ function displayResult(result, url) {
   riskLevel.style.color = scoreClass === 'safe' ? '#00ff66' : 
                          scoreClass === 'moderate' ? '#ffcc00' : '#ff0055';
 
-  // Add analysis details
+  // Add main message and key security info
   if (result.features) {
-    // Add feature scores
-    const featuresList = document.createElement('div');
-    featuresList.className = 'url-details';
-    featuresList.innerHTML = `
-      <div class="url-detail-item">
-        <div class="label">Domain Age Score</div>
-        <div class="value">${Math.round(result.features.domain_age * 100)}%</div>
-      </div>
-      <div class="url-detail-item">
-        <div class="label">SSL Certificate</div>
-        <div class="value">${Math.round(result.features.ssl_cert * 100)}%</div>
-      </div>
-      <div class="url-detail-item">
-        <div class="label">URL Structure</div>
-        <div class="value">${Math.round((1 - result.features.suspicious_chars) * 100)}%</div>
-      </div>
-      <div class="url-detail-item">
-        <div class="label">Domain Trust</div>
-        <div class="value">${Math.round((1 - result.features.suspicious_tld) * 100)}%</div>
-      </div>
-    `;
-    threatsList.appendChild(featuresList);
-
-    // Add reasons/threats
+    // Show main message (safe/unsafe)
+    if (result.features.main_message) {
+      const mainMsg = document.createElement('div');
+      mainMsg.className = 'main-message';
+      mainMsg.textContent = result.features.main_message;
+      threatsList.appendChild(mainMsg);
+    }
+    // Show SSL certificate status and any other key security info
     if (result.features.reasons) {
+      // Only show SSL and other security info, not all reasons
       result.features.reasons.forEach(reason => {
-        const li = document.createElement('li');
-        li.className = 'threat-item';
-        li.textContent = reason;
-        threatsList.appendChild(li);
+        if (reason.toLowerCase().includes('ssl') || reason.toLowerCase().includes('https') || reason.toLowerCase().includes('secure')) {
+          const li = document.createElement('li');
+          li.className = 'threat-item';
+          li.textContent = reason;
+          threatsList.appendChild(li);
+        }
       });
+    }
+    // If not safe, show a clear warning
+    if (result.risk_level !== 'Low Risk') {
+      const warning = document.createElement('div');
+      warning.className = 'main-message';
+      warning.style.color = '#ff0055';
+      warning.textContent = '⚠️ This link is NOT SAFE!';
+      threatsList.appendChild(warning);
     }
   }
 
@@ -198,6 +179,16 @@ function displayError(message, url) {
 document.addEventListener('DOMContentLoaded', () => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const url = tabs[0].url;
+    
+    // First, try to get stored analysis from background script
+    chrome.runtime.sendMessage({ type: 'getStoredAnalysis' }, response => {
+      if (response && response.success && response.data && response.data.url === url) {
+        console.log('Soteria Popup: Displaying stored analysis.');
+        displayResult(response.data.data, response.data.url); // Use response.data.data for the actual result
+      } else {
+        console.log('Soteria Popup: No stored analysis or URL mismatch, initiating new analysis.');
     analyzeURL(url);
+      }
+    });
     });
 }); 

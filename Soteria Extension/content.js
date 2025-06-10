@@ -133,7 +133,7 @@ async function analyzeUrl(url, apiEndpoint) {
   console.log(`Soteria: Analyzing URL ${url} using endpoint ${apiEndpoint}`);
   
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
   try {
     const response = await fetch(`${apiEndpoint}/analyze`, {
@@ -203,14 +203,14 @@ function showHighRiskAlert(result) {
   notification.style.visibility = 'visible !important';
   notification.style.opacity = '1 !important';
 
-  // Auto-hide after 10 seconds
+  // Auto-hide after 5 seconds
   notificationTimeout = setTimeout(() => {
     notification.classList.add('hiding');
     setTimeout(() => {
       notification.style.display = 'none';
       notification.classList.remove('hiding');
     }, 300);
-  }, 10000);
+  }, 5000);
 
   // Update extension icon
   chrome.runtime.sendMessage({
@@ -235,8 +235,8 @@ async function analyzeCurrentPage() {
   }
 }
 
-// Start analysis after a short delay
-setTimeout(analyzeCurrentPage, 2000);
+// Start analysis immediately on page load
+analyzeCurrentPage();
 
 // Listen for navigation events
 let lastUrl = window.location.href;

@@ -15,14 +15,13 @@ chrome.runtime.onInstalled.addListener(() => {
   }
 });
 
-// API endpoints to try
+let lastAnalysisResult = {};
+let currentApiUrl = null;
 const API_ENDPOINTS = [
   'http://localhost:5000/api',
   'http://127.0.0.1:5000/api',
   'http://192.168.29.200:5000/api'
 ];
-
-let currentApiUrl = null;
 
 async function testEndpoint(url) {
   const controller = new AbortController();
@@ -98,28 +97,13 @@ async function analyzeUrl(url, apiEndpoint) {
   }
 }
 
-async function handleAnalysis(url) {
-  console.log('Soteria Background: Starting analysis for URL:', url);
-  
-  // Find a working API endpoint if we don't have one
-  if (!currentApiUrl) {
-    console.log('Soteria Background: Finding working endpoint...');
-    currentApiUrl = await findWorkingEndpoint();
-    if (!currentApiUrl) {
-      console.error('Soteria Background: No working endpoint found');
-      throw new Error('No working API endpoint found');
-    }
-    console.log('Soteria Background: Using endpoint:', currentApiUrl);
-  }
-
-  // Analyze the URL
+async function analyzeUrlAndStore(url, apiEndpoint) {
   try {
-    const result = await analyzeUrl(url, currentApiUrl);
-    console.log('Soteria Background: Analysis completed:', result);
+    const result = await analyzeUrl(url, apiEndpoint);
+    lastAnalysisResult = { url, data: result }; // Store the result
     return result;
   } catch (error) {
-    console.error('Soteria Background: Analysis error:', error);
-    currentApiUrl = null; // Reset the API URL so we'll try finding a working endpoint next time
+    console.error('Soteria Background: Error during analysis and store:', error);
     throw error;
   }
 }
@@ -146,21 +130,58 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
-// Listen for messages from content script
+// Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Soteria Background: Received message:', request, 'from:', sender);
   
   if (request.type === 'analyzeUrl') {
     console.log('Soteria Background: Processing analyzeUrl request for:', request.url);
-    handleAnalysis(request.url)
+    // Ensure API URL is set before analysis
+    if (!currentApiUrl) {
+      findWorkingEndpoint().then(endpoint => {
+        currentApiUrl = endpoint;
+        if (currentApiUrl) {
+          analyzeUrlAndStore(request.url, currentApiUrl)
       .then(result => {
         console.log('Soteria Background: Analysis successful:', result);
         sendResponse({ success: true, data: result });
+              updateIcon(result.risk_level); // Update icon immediately after analysis
       })
       .catch(error => {
         console.error('Soteria Background: Analysis failed:', error, 'Stack:', error.stack);
+              sendResponse({ success: false, error: error.message });
+              updateIcon('default'); // Reset icon on error
+            });
+        } else {
+          const errorMsg = 'No working API endpoint found.';
+          console.error('Soteria Background:', errorMsg);
+          sendResponse({ success: false, error: errorMsg });
+          updateIcon('default');
+        }
+      }).catch(error => {
+        console.error('Soteria Background: Error finding endpoint:', error);
         sendResponse({ success: false, error: error.message });
+        updateIcon('default');
       });
+    } else {
+      analyzeUrlAndStore(request.url, currentApiUrl)
+        .then(result => {
+          console.log('Soteria Background: Analysis successful:', result);
+          sendResponse({ success: true, data: result });
+          updateIcon(result.risk_level);
+        })
+        .catch(error => {
+          console.error('Soteria Background: Analysis failed:', error, 'Stack:', error.stack);
+          sendResponse({ success: false, error: error.message });
+          updateIcon('default');
+        });
+    }
+    return true; // Will respond asynchronously
+  }
+
+  if (request.type === 'getStoredAnalysis') {
+    console.log('Soteria Background: Responding with stored analysis:', lastAnalysisResult);
+    sendResponse({ success: true, data: lastAnalysisResult });
     return true; // Will respond asynchronously
   }
 

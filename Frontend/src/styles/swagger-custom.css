@@ -1,0 +1,156 @@
+/* UknownV1/Frontend/src/styles/swagger-custom.css */
+
+/* Universal font and color adjustments - Increased for better readability */
+.swagger-ui * {
+  font-size: 18px !important; /* Significantly increased base font size */
+  color: #FFFFFF !important; /* Pure white for maximum readability */
+  font-family: 'Inter', sans-serif !important; /* A modern, readable sans-serif font */
+}
+
+/* Ensure headers remain distinct and visible */
+.swagger-ui h1,
+.swagger-ui h2,
+.swagger-ui h3,
+.swagger-ui h4,
+.swagger-ui h5,
+.swagger-ui h6 {
+  color: #8be9fd !important; /* Brighter cyber-blue for headings */
+  font-family: 'Share Tech Mono', monospace !important; /* Keep cyber font for titles */
+  font-size: 22px !important; /* Even more increased heading font size */
+}
+
+/* Specific elements for better visibility */
+.swagger-ui .opblock-tag,
+.swagger-ui .opblock-summary-path {
+  color: #8be9fd !important; /* Brighter cyber-blue for tags */
+}
+
+.swagger-ui .opblock .opblock-section-header,
+.swagger-ui .wrapper,
+.swagger-ui .scheme-container,
+.swagger-ui .topbar,
+.swagger-ui .info,
+.swagger-ui .opblock .opblock-body,
+.swagger-ui .parameters-col_description,
+.swagger-ui .response-col_description,
+.swagger-ui .tab-item,
+.swagger-ui .prop-type,
+.swagger-ui .model-box,
+.swagger-ui .model-box .property.primitive,
+.swagger-ui .model-box .property.complex,
+.swagger-ui .markdown p,
+.swagger-ui .parameter__name,
+.swagger-ui .parameter__type,
+.swagger-ui .parameter__deprecated,
+.swagger-ui .parameter__in {
+  background-color: #212121 !important;
+  color: #FFFFFF !important; /* Ensure content text is pure white */
+}
+
+/* Code blocks and JSON examples */
+.swagger-ui .response-col_description pre,
+.swagger-ui .request-body-param__example,
+.swagger-ui textarea.body-param,
+.swagger-ui .renderedMarkdown pre,
+.swagger-ui .highlight-code,
+.swagger-ui .curl-command {
+  background-color: #1A1A1A !important; /* Slightly darker background for code */
+  color: #F8F8F2 !important; /* Very light grey for code text */
+  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace !important; /* Monospace for code */
+  border: 1px solid #444444 !important; /* Slightly lighter border for code blocks */
+  font-size: 17px !important; /* Increased for code clarity */
+}
+
+/* Input fields */
+.swagger-ui input[type=text],
+.swagger-ui input[type=password],
+.swagger-ui select {
+  background-color: #1A1A1A !important;
+  border: 1px solid #444444 !important;
+  color: #FFFFFF !important;
+  font-size: 18px !important;
+}
+
+/* Table headers */
+.swagger-ui table thead {
+  background-color: #2D2D2D !important;
+  color: #FFFFFF !important;
+  font-size: 18px !important;
+}
+
+/* Table cells */
+.swagger-ui table td {
+  color: #FFFFFF !important;
+  font-size: 18px !important;
+}
+
+/* Buttons */
+.swagger-ui .btn,
+.swagger-ui .opblock-summary-method {
+  background-color: #8be9fd !important; /* Brighter cyber-blue for buttons */
+  color: #1A1A1A !important; /* Dark text on bright button */
+  border-color: #8be9fd !important;
+  font-family: 'Share Tech Mono', monospace !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+}
+
+.swagger-ui .btn.cancel {
+  background-color: #ff5555 !important; /* Brighter red for cancel/delete actions */
+  color: #1A1A1A !important;
+}
+
+/* Error messages */
+.swagger-ui .message-box.message-box_error {
+  background-color: #ff5555 !important;
+  color: #FFFFFF !important;
+  font-size: 18px !important;
+}
+
+/* Property names in models */
+.swagger-ui .prop-name {
+    color: #FFFFFF !important; /* Make property names pure white */
+}
+
+.swagger-ui .property.primitive .prop-name,
+.swagger-ui .property.complex .prop-name {
+    color: #FFFFFF !important;
+}
+
+.swagger-ui .opblock-description-wrapper p,
+.swagger-ui .opblock-external-docs-wrapper p,
+.swagger-ui .info p,
+.swagger-ui .label span {
+    color: #FFFFFF !important; /* Ensure main description text is pure white */
+}
+
+.swagger-ui .response-col_links,
+.swagger-ui .response-col_code {
+    background-color: #212121 !important;
+}
+
+.swagger-ui .loading-container .loading {
+    border-color: #8be9fd !important; /* Brighter loading spinner */
+    border-top-color: transparent !important;
+}
+
+.swagger-ui .scheme-container {
+    box-shadow: none !important;
+    border-top: 1px solid #444444 !important; /* Slightly lighter border */
+}
+
+.swagger-ui .opblock-body {
+    border: 1px solid #444444 !important;
+}
+
+.swagger-ui .parameter__name.required {
+    color: #ff5555 !important; /* Brighter red for required parameters */
+}
+
+/* Ensure the parameter example and model text is readable */
+.swagger-ui .parameters-col_description .markdown pre,
+.swagger-ui .model-example .language-json,
+.swagger-ui .highlight-code .microlight {
+    color: #F8F8F2 !important; /* Very light white for JSON examples */
+    font-size: 17px !important; /* Increased consistent font size for code */
+} 
