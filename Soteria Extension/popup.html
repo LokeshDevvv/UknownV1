@@ -2,219 +2,49 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --background: 0 0% 3%;
-      --foreground: 0 0% 98%;
-      --card: 0 0% 4%;
-      --card-foreground: 0 0% 98%;
-      --primary: 0 0% 98%;
-      --primary-foreground: 0 0% 3%;
-      --secondary: 0 0% 8%;
-      --secondary-foreground: 0 0% 98%;
-      --muted: 0 0% 8%;
-      --muted-foreground: 0 0% 64.9%;
-      --accent: 0 0% 8%;
-      --accent-foreground: 0 0% 98%;
-      --destructive: 0 84% 60%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 0 0% 8%;
-      --input: 0 0% 8%;
-      --ring: 0 0% 83.9%;
-      --cyber-blue: 217 91% 60%;
-      --cyber-green: 142 76% 36%;
-      --cyber-red: 0 84% 60%;
-      --cyber-purple: 270 76% 53%;
-      --cyber-yellow: 45 93% 47%;
-    }
-
-    body {
-      width: 400px;
-      padding: 1.25rem;
-      font-family: 'Inter', sans-serif;
-      background: hsl(var(--background));
-      color: hsl(var(--foreground));
-      margin: 0;
-    }
-
-    .font-cyber {
-      font-family: 'Orbitron', monospace;
-      letter-spacing: 0.05em;
-    }
-
-    .font-display {
-      font-family: 'Rajdhani', sans-serif;
-      letter-spacing: 0.02em;
-    }
-
-    .header {
-      @apply flex items-center gap-2.5 mb-5;
-    }
-
-    .logo {
-      @apply w-6 h-6 rounded-full bg-[hsl(var(--cyber-blue))];
-    }
-
-    .title {
-      @apply text-lg font-bold text-[hsl(var(--cyber-blue))] font-cyber;
-    }
-
-    .api-status {
-      @apply flex items-center gap-2 mb-4 p-2 bg-[hsl(var(--muted))] rounded-md text-xs;
-    }
-
-    .api-status .indicator {
-      @apply w-2 h-2 rounded-full bg-[hsl(var(--destructive))];
-    }
-
-    .api-status .indicator.connected {
-      @apply bg-[hsl(var(--cyber-green))];
-    }
-
-    .url-section {
-      @apply mb-5;
-    }
-
-    .url {
-      @apply text-sm text-[hsl(var(--muted-foreground))] break-all mb-2 p-2.5 bg-[hsl(var(--muted))] rounded-md;
-    }
-
-    .url-details {
-      @apply grid grid-cols-2 gap-2 text-xs;
-    }
-
-    .url-detail-item {
-      @apply p-2 bg-[hsl(var(--muted))] rounded-md;
-    }
-
-    .url-detail-item .label {
-      @apply text-[hsl(var(--muted-foreground))] mb-1;
-    }
-
-    .url-detail-item .value {
-      @apply text-[hsl(var(--cyber-blue))] font-mono;
-    }
-
-    .status {
-      @apply text-base mb-4 p-2.5 rounded-md flex items-center gap-2;
-    }
-
-    .status.safe {
-      @apply bg-[hsl(var(--cyber-green))/0.1] text-[hsl(var(--cyber-green))];
-    }
-
-    .status.moderate {
-      @apply bg-[hsl(var(--cyber-yellow))/0.1] text-[hsl(var(--cyber-yellow))];
-    }
-
-    .status.high {
-      @apply bg-[hsl(var(--cyber-red))/0.1] text-[hsl(var(--cyber-red))];
-    }
-
-    .score-section {
-      @apply text-center mb-5;
-    }
-
-    .score {
-      @apply text-4xl font-bold mb-1 font-cyber;
-    }
-
-    .score.safe { @apply text-[hsl(var(--cyber-green))]; }
-    .score.moderate { @apply text-[hsl(var(--cyber-yellow))]; }
-    .score.high { @apply text-[hsl(var(--cyber-red))]; }
-
-    .score-label {
-      @apply text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wider;
-    }
-
-    .threat-metrics {
-      @apply grid grid-cols-2 gap-2 mb-5;
-    }
-
-    .metric-item {
-      @apply p-2.5 bg-[hsl(var(--muted))] rounded-md text-center;
-    }
-
-    .metric-value {
-      @apply text-2xl font-bold mb-1 font-cyber;
-    }
-
-    .metric-label {
-      @apply text-xs text-[hsl(var(--muted-foreground))];
-    }
-
-    .section-title {
-      @apply text-sm text-[hsl(var(--muted-foreground))] mb-2.5 flex items-center gap-2;
-    }
-
-    .reasons {
-      @apply list-none p-0 m-0;
-    }
-
-    .reasons li {
-      @apply mb-2 text-[hsl(var(--foreground))/0.8] p-2 bg-[hsl(var(--muted))] rounded-md flex items-center gap-2;
-    }
-
-    .loading {
-      @apply text-center text-[hsl(var(--cyber-blue))] p-5 flex flex-col items-center gap-2.5;
-    }
-
-    .loading-spinner {
-      @apply w-6 h-6 border-3 border-[hsl(var(--cyber-blue))/0.1] border-t-[hsl(var(--cyber-blue))] rounded-full animate-spin;
-    }
-
-    .error {
-      @apply bg-[hsl(var(--cyber-red))/0.1] text-[hsl(var(--cyber-red))] p-2.5 rounded-md mt-2.5;
-    }
-
-    button {
-      @apply bg-[hsl(var(--cyber-blue))] text-[hsl(var(--primary-foreground))] border-none py-2 px-4 rounded-md cursor-pointer font-bold mt-2.5 w-full font-cyber transition-colors hover:bg-[hsl(var(--cyber-blue))/0.9] disabled:opacity-50 disabled:cursor-not-allowed;
-    }
-  </style>
+  <link href="css/styles.css" rel="stylesheet">
 </head>
-<body>
+<body class="animate-fade-in">
   <div id="loading" class="loading" style="display: none;">
     <div class="loading-spinner"></div>
-    <div>Analyzing URL...</div>
+    <div class="font-cyber">Analyzing URL...</div>
   </div>
 
-  <div id="content">
+  <div id="content" class="container">
     <div class="header">
-      <div class="logo"></div>
+      <div class="logo cyber-glow"></div>
       <div class="title">SOTERIA</div>
     </div>
 
-    <div class="api-status">
+    <div class="api-status glassmorphism">
       <div id="apiStatus" class="indicator"></div>
-      <div id="apiStatusText">CHECKING API...</div>
+      <div id="apiStatusText" class="font-cyber">CHECKING API...</div>
     </div>
 
-    <div id="result" style="display: none;">
+    <div id="result" style="display: none;" class="animate-scale-in">
       <div class="url-section">
-        <div id="urlDisplay" class="url"></div>
+        <div id="urlDisplay" class="url cyber-border"></div>
         <div id="urlDetails" class="url-details"></div>
       </div>
 
       <div class="score-section">
-        <div id="score" class="score">0/100</div>
-        <div class="score-label">Security Score</div>
+        <div id="score" class="score font-cyber">0/100</div>
+        <div class="score-label font-display">Security Score</div>
       </div>
 
       <div class="threat-metrics">
-        <div class="metric-item">
-          <div id="securityScore" class="metric-value">0%</div>
-          <div class="metric-label">Security</div>
+        <div class="metric-item cyber-border">
+          <div id="securityScore" class="metric-value font-cyber">0%</div>
+          <div class="metric-label font-display">Security</div>
         </div>
-        <div class="metric-item">
-          <div id="riskLevel" class="metric-value">Unknown</div>
-          <div class="metric-label">Risk Level</div>
+        <div class="metric-item cyber-border">
+          <div id="riskLevel" class="metric-value font-cyber">Unknown</div>
+          <div class="metric-label font-display">Risk Level</div>
         </div>
       </div>
 
       <div class="section-title">
-        <span>Threat Analysis</span>
+        <span class="font-cyber">Threat Analysis</span>
       </div>
       <ul id="threats" class="reasons"></ul>
     </div>
