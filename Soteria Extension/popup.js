@@ -22,6 +22,7 @@ async function checkApiConnection() {
     if (response.ok) {
       apiStatus.classList.add('connected');
       apiStatusText.textContent = 'API CONNECTED';
+      apiStatusText.classList.add('text-cyber-green');
       return true;
     } else {
       throw new Error('API not responding');
@@ -29,6 +30,7 @@ async function checkApiConnection() {
   } catch (err) {
     apiStatus.classList.remove('connected');
     apiStatusText.textContent = 'API DISCONNECTED';
+    apiStatusText.classList.remove('text-cyber-green');
     return false;
   }
 }
@@ -116,15 +118,12 @@ function displayResult(result, url) {
   }
 
   // Update security metrics
-  scoreDiv.textContent = `${threatScore}/100`;
-  scoreDiv.className = `score ${scoreClass}`;
+  updateScore(threatScore);
+  updateRiskLevel(result.risk_level);
 
   // Calculate security score (inverse of threat score)
   const securityScoreValue = 100 - threatScore;
   securityScore.textContent = `${securityScoreValue}%`;
-  riskLevel.textContent = riskText;
-  riskLevel.style.color = scoreClass === 'safe' ? '#00ff66' : 
-                         scoreClass === 'moderate' ? '#ffcc00' : '#ff0055';
 
   // Add main message and key security info
   if (result.features) {
@@ -173,6 +172,74 @@ function displayError(message, url) {
     document.getElementById('retryButton')?.addEventListener('click', () => {
     analyzeURL(url);
   });
+}
+
+function updateApiStatus(connected) {
+  const statusIndicator = document.getElementById('apiStatus');
+  const statusText = document.getElementById('apiStatusText');
+  
+  if (connected) {
+    statusIndicator.classList.add('connected');
+    statusText.textContent = 'API CONNECTED';
+    statusText.classList.add('text-cyber-green');
+  } else {
+    statusIndicator.classList.remove('connected');
+    statusText.textContent = 'API DISCONNECTED';
+    statusText.classList.remove('text-cyber-green');
+  }
+}
+
+function updateScore(score) {
+  const scoreElement = document.getElementById('score');
+  scoreElement.textContent = `${score}/100`;
+  
+  // Update score color based on value
+  scoreElement.classList.remove('safe', 'moderate', 'high');
+  if (score >= 70) {
+    scoreElement.classList.add('safe');
+  } else if (score >= 40) {
+    scoreElement.classList.add('moderate');
+  } else {
+    scoreElement.classList.add('high');
+  }
+}
+
+function updateRiskLevel(level) {
+  const riskElement = document.getElementById('riskLevel');
+  riskElement.textContent = level.toUpperCase();
+  
+  // Update risk level color
+  riskElement.classList.remove('text-cyber-green', 'text-cyber-yellow', 'text-cyber-red');
+  switch (level.toLowerCase()) {
+    case 'safe':
+      riskElement.classList.add('text-cyber-green');
+      break;
+    case 'moderate':
+      riskElement.classList.add('text-cyber-yellow');
+      break;
+    case 'high':
+      riskElement.classList.add('text-cyber-red');
+      break;
+  }
+}
+
+function updateThreats(threats) {
+  const threatsList = document.getElementById('threats');
+  threatsList.innerHTML = '';
+  
+  threats.forEach(threat => {
+    const li = document.createElement('li');
+    const icon = document.createElement('i');
+    icon.setAttribute('data-lucide', 'alert-triangle');
+    icon.classList.add('text-cyber-yellow');
+    
+    li.appendChild(icon);
+    li.appendChild(document.createTextNode(threat));
+    threatsList.appendChild(li);
+  });
+  
+  // Update icons
+  lucide.createIcons();
 }
 
 // Analyze current tab's URL when popup opens

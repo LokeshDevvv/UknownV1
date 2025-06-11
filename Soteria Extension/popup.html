@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link href="css/styles.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="animate-fade-in">
   <div id="loading" class="loading" style="display: none;">
@@ -12,8 +13,10 @@
 
   <div id="content" class="container">
     <div class="header">
-      <div class="logo cyber-glow"></div>
-      <div class="title">SOTERIA</div>
+      <div class="logo cyber-glow">
+        <i data-lucide="shield"></i>
+      </div>
+      <div class="title font-cyber">SOTERIA</div>
     </div>
 
     <div class="api-status glassmorphism">
@@ -44,6 +47,7 @@
       </div>
 
       <div class="section-title">
+        <i data-lucide="alert-triangle" class="icon"></i>
         <span class="font-cyber">Threat Analysis</span>
       </div>
       <ul id="threats" class="reasons"></ul>
@@ -51,5 +55,9 @@
   </div>
 
   <script src="popup.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
 </body>
 </html> 
